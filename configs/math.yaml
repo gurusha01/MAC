@@ -1,0 +1,5 @@
+# this file stores the configuration for the math dataset
+
+dataset_path: "datasets/MATH_test.json"
+llm_name: "gemma_base"
+log_file_name: "logs/math_heirarchical_gemma2.jsonl"
