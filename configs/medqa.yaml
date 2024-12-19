@@ -1,0 +1,5 @@
+# this file stores the configuration for the math dataset
+
+dataset_path: "datasets/MedQA_test_200.json"
+llm_name: "gemma_base"
+log_file_name: "logs/medqa_200_heirarchical_gemma2_4_shot.jsonl"

@@ -1,4 +1,5 @@
 from mathematicians import *
+from hospital import *
 from llm import *
 from society import *
 import os
@@ -29,7 +30,9 @@ if __name__ == "__main__":
 
     question_list = dataset["question_list"]
     gold_answer_list = dataset["gold_answer_list"]
-    test_mathematicians(llm_name, question_list, gold_answer_list, log_file_name)
+    problem_type_list = dataset["problem_type_list"]
+    # test_mathematicians(llm_name, question_list, gold_answer_list, problem_type_list, log_file_name)
+    test_doctors(llm_name, question_list, gold_answer_list, problem_type_list, log_file_name)
 
 
 

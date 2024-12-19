@@ -52,7 +52,7 @@ class Agent:
             tool_output = self.tool_output(inputs, background)
             messages.append({"role": "user", "content": f"Memory: {self.memory}\n{self.tools[0]}: {tool_output}\nCurrent Input: {inputs} \n Answer: Let's think step by step."})
         else: 
-            messages.append({"role": "user", "content": f"Memory: {self.memory}\nCurrent Input: {inputs} \n Answer: Let's think step by step."})
+            messages.append({"role": "user", "content": f"Question: {inputs} \n {self.memory}\n Answer: Let's think step by step."})
 
         # Generate response using LLM()
         response = LLM(messages, self.model_name)
@@ -90,6 +90,7 @@ class Society:
         communication_graph = self.graph
         set_of_agents = self.agents
         for agent in set_of_agents:
+            # breakpoint()
             # print("Currently processing agent: ", agent.name)
             agent_output = agent.process_input(input, background)
             update_child_memory = f"{agent.name}'s Opinion: {agent_output} \n\n\n"
