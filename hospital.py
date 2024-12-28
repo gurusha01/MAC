@@ -320,8 +320,8 @@ def test_doctors(llm_name, question_list, gold_answer_list, problem_types, log_f
         }
 
         # instantiate the society
-        ProblemSolver = Society(doctors, heirarchical_hospital_graph)
-        # ProblemSolver = Society(doctors, clique_hospital_graph)
+        # ProblemSolver = Society(doctors, heirarchical_hospital_graph)
+        ProblemSolver = Society(doctors, clique_hospital_graph)
         # ProblemSolver = Society(single_doctor, single_doctor_graph)
         ProblemSolver.run_simulation(1, question, background = "")
 
