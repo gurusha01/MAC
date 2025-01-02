@@ -2,4 +2,4 @@
 
 dataset_path: "datasets/MedQA_test_200.json"
 llm_name: "meerkat"
-log_file_name: "logs/medqa_200_clique_meerkat_4_shot.jsonl"
+log_file_name: "logs/medqa_200_spl_ag_huatuo_gpt_o1_4_shot.jsonl"

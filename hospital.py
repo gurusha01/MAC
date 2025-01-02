@@ -260,9 +260,9 @@ If the question does not fall within any medical domain or is not sufficiently c
 
 def test_doctors(llm_name, question_list, gold_answer_list, problem_types, log_file_name):
     acc = 0
-    question_list = question_list[:100]
-    gold_answer_list = gold_answer_list[:100]
-    problem_types = problem_types[:100]
+    question_list = question_list[19:100]
+    gold_answer_list = gold_answer_list[19:100]
+    problem_types = problem_types[19:100]
     for i in tqdm(range(len(question_list))):
         
         question = question_list[i]
@@ -321,8 +321,8 @@ def test_doctors(llm_name, question_list, gold_answer_list, problem_types, log_f
 
         # instantiate the society
         # ProblemSolver = Society(doctors, heirarchical_hospital_graph)
-        ProblemSolver = Society(doctors, clique_hospital_graph)
-        # ProblemSolver = Society(single_doctor, single_doctor_graph)
+        # ProblemSolver = Society(doctors, clique_hospital_graph)
+        ProblemSolver = Society(single_doctor, single_doctor_graph)
         ProblemSolver.run_simulation(1, question, background = "")
 
         # based on the memory of head doctor, give the final answer to the user

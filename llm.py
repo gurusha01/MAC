@@ -4,10 +4,11 @@ import torch
 import os
 from openai import OpenAI
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "2,3,4,5"
+os.environ["CUDA_VISIBLE_DEVICES"] = "1,3"
 tokenizer = "dummy"
 model = "dummy"
 checkpoint = "dmis-lab/meerkat-7b-v1.0"
+checkpoint = "FreedomIntelligence/HuatuoGPT-o1-7B"
 tokenizer = AutoTokenizer.from_pretrained(checkpoint)
 model = AutoModelForCausalLM.from_pretrained(checkpoint,  device_map = "auto", torch_dtype=torch.float16)
 # tokenizer = AutoTokenizer.from_pretrained("google/gemma-2-9b-it")
