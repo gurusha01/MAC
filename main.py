@@ -1,4 +1,4 @@
-from mathematicians import *
+# from mathematicians import *
 from hospital import *
 from llm import *
 from society import *

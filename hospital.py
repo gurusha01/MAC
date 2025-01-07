@@ -11,7 +11,7 @@ make few graphs
 load datasets
 evaluate those graphs on dataset
 '''
-from society import Agent, Society
+from society import Agent, Society, ListOfSocities
 from llm import *
 import json
 from tqdm import tqdm
@@ -20,7 +20,7 @@ from tqdm import tqdm
 # provide 4 shots of examples of problem solving to each agent related to their topic.
 gyneacologist_agent = {
     "name": "gyneacologist",
-    "id": 1,
+    "id": 0,
     "system_prompt": '''You are a highly skilled medical assistant specializing in gynecology. Your task is to answer gynecological queries accurately, concisely, and with evidence-based reasoning. Your expertise includes reproductive health, menstrual disorders, pregnancy, infertility, and gynecological surgeries.
 
 You are given 4 examples of how to answer gynecological multiple-choice questions. Use these examples to guide your responses. Provide detailed reasoning for each question and end with the correct answer in brackets, like [Answer: <answer>].
@@ -64,7 +64,7 @@ When solving problems, provide a detailed yet concise explanation followed by th
 
 oncologist_agent = {
     "name": "oncologist",
-    "id": 3,
+    "id": 1,
     "system_prompt": '''You are a highly skilled medical assistant specializing in oncology. Your task is to answer oncology-related queries accurately, concisely, and with evidence-based reasoning. Your expertise includes cancer diagnosis, treatment (chemotherapy, radiotherapy, immunotherapy), cancer genetics, and palliative care.
 
 You are given 4 examples of how to answer oncology multiple-choice questions. Use these examples to guide your responses. Provide detailed reasoning for each question and end with the correct answer in brackets, like [Answer: <answer>].
@@ -108,7 +108,7 @@ When solving problems, provide a detailed yet concise explanation followed by th
 
 neurologist_agent = {
     "name": "neurologist",
-    "id": 4,
+    "id": 2,
     "system_prompt": '''You are a highly skilled medical assistant specializing in neurology. Your task is to answer neurology-related queries accurately, concisely, and with evidence-based reasoning. Your expertise includes neurological disorders, stroke, epilepsy, neurodegenerative diseases, and neuropathies.
 
 You are given 4 examples of how to answer neurology multiple-choice questions. Use these examples to guide your responses. Provide detailed reasoning for each question and end with the correct answer in brackets, like [Answer: <answer>].
@@ -152,7 +152,7 @@ When solving problems, provide a detailed yet concise explanation followed by th
 
 cardiologist_agent = {
     "name": "cardiologist",
-    "id": 5,
+    "id": 3,
     "system_prompt": '''You are a highly skilled medical assistant specializing in cardiology. Your task is to answer cardiology-related queries accurately, concisely, and with evidence-based reasoning. Your expertise includes heart diseases, arrhythmias, coronary artery disease, heart failure, and cardiovascular pharmacology.
 
 You are given 4 examples of how to answer cardiology multiple-choice questions. Use these examples to guide your responses. Provide detailed reasoning for each question and end with the correct answer in brackets, like [Answer: <answer>].
@@ -196,7 +196,7 @@ When solving problems, provide a detailed yet concise explanation followed by th
 
 endocrinologist_agent = {
     "name": "endocrinologist",
-    "id": 6,
+    "id": 4,
     "system_prompt": '''You are a highly skilled medical assistant specializing in endocrinology. Your task is to answer endocrinology-related queries accurately, concisely, and with evidence-based reasoning. Your expertise includes diabetes, thyroid disorders, adrenal dysfunction, and hormonal imbalances.
 
 You are given 4 examples of how to answer endocrinology multiple-choice questions. Use these examples to guide your responses. Provide detailed reasoning for each question and end with the correct answer in brackets, like [Answer: <answer>].
@@ -240,7 +240,7 @@ When solving problems, provide a detailed yet concise explanation followed by th
 
 aggregator_agent = {
     "name": "aggregator",
-    "id": 7,
+    "id": 5,
     "system_prompt": '''You are an aggregator agent tasked with synthesizing and evaluating responses from specialized medical agents. Your goal is to carefully analyze their responses along with the original question and provide the most accurate, evidence-based, and well-justified answer.
 
 When responding:
@@ -260,105 +260,109 @@ If the question does not fall within any medical domain or is not sufficiently c
 
 def test_doctors(llm_name, question_list, gold_answer_list, problem_types, log_file_name):
     acc = 0
-    question_list = question_list[19:100]
-    gold_answer_list = gold_answer_list[19:100]
-    problem_types = problem_types[19:100]
+    question_list = question_list[:100]
+    gold_answer_list = gold_answer_list[:100]
+    problem_types = problem_types[:100]
+
+    gyneacologist = Agent(**gyneacologist_agent)
+    oncologist = Agent(**oncologist_agent)
+    neurologist = Agent(**neurologist_agent)
+    cardiologist = Agent(**cardiologist_agent)
+    endocrinologist = Agent(**endocrinologist_agent)
+    aggregator = Agent(**aggregator_agent)
+
+
+    doctors = [gyneacologist, oncologist, neurologist, cardiologist, endocrinologist, aggregator]
+
+    heirarchical_hospital_graph = {
+        "aggregator": [],
+        "gyneacologist": [aggregator],
+        "oncologist": [aggregator],
+        "neurologist": [aggregator],
+        "cardiologist": [aggregator],
+        "endocrinologist": [aggregator],
+    }
+
+    clique_hospital_graph = {
+        "aggregator": [],
+        "gyneacologist": [oncologist, neurologist, cardiologist, endocrinologist, aggregator],
+        "oncologist": [gyneacologist, neurologist, cardiologist, endocrinologist, aggregator],
+        "neurologist": [gyneacologist, oncologist, cardiologist, endocrinologist, aggregator],
+        "cardiologist": [gyneacologist, oncologist, neurologist, endocrinologist, aggregator],
+        "endocrinologist": [gyneacologist, oncologist, neurologist, cardiologist, aggregator],
+    }
+
+    ring_hospital_graph = {
+        "aggregator": [],
+        "gyneacologist": [oncologist, endocrinologist],
+        "oncologist": [neurologist, cardiologist],
+        "neurologist": [cardiologist, endocrinologist],
+        "cardiologist": [endocrinologist, gyneacologist],
+        "endocrinologist": [gyneacologist, oncologist],
+    }
+    # breakpoint() 
+    # if "gyneacologist" in problem_type:
+    #     problem_specific_agent = gyneacologist
+    # elif "oncologist" in problem_type:
+    #     problem_specific_agent = oncologist
+    # elif "neurologist" in problem_type:
+    #     problem_specific_agent = neurologist
+    # elif "cardiologist" in problem_type:
+    #     problem_specific_agent = cardiologist
+    # elif "endocrinologist" in problem_type:
+    #     problem_specific_agent = endocrinologist
+    # elif "headdoctor" in problem_type:
+    #     problem_specific_agent = aggregator
+    
+    # single_doctor = [problem_specific_agent, aggregator]
+    # single_doctor_graph = {
+    #     "aggregator": [],
+    #     "gyneacologist": [aggregator],
+    #     "oncologist": [aggregator],
+    #     "neurologist": [aggregator],
+    #     "cardiologist": [aggregator],
+    #     "endocrinologist": [aggregator],
+    # }
+    socities = []
+    
     for i in tqdm(range(len(question_list))):
         
         question = question_list[i]
         gold_answer = gold_answer_list[i]
         problem_type = problem_types[i]
-        gyneacologist = Agent(**gyneacologist_agent)
-        oncologist = Agent(**oncologist_agent)
-        neurologist = Agent(**neurologist_agent)
-        cardiologist = Agent(**cardiologist_agent)
-        endocrinologist = Agent(**endocrinologist_agent)
-        aggregator = Agent(**aggregator_agent)
-
-
-        doctors = [gyneacologist, oncologist, neurologist, cardiologist, endocrinologist, aggregator]
-
-        heirarchical_hospital_graph = {
-            "aggregator": [],
-            "gyneacologist": [aggregator],
-            "oncologist": [aggregator],
-            "neurologist": [aggregator],
-            "cardiologist": [aggregator],
-            "endocrinologist": [aggregator],
-        }
-
-        clique_hospital_graph = {
-            "aggregator": [],
-            "gyneacologist": [oncologist, neurologist, cardiologist, endocrinologist, aggregator],
-            "oncologist": [gyneacologist, neurologist, cardiologist, endocrinologist, aggregator],
-            "neurologist": [gyneacologist, oncologist, cardiologist, endocrinologist, aggregator],
-            "cardiologist": [gyneacologist, oncologist, neurologist, endocrinologist, aggregator],
-            "endocrinologist": [gyneacologist, oncologist, neurologist, cardiologist, aggregator],
-        }
-        
-        if "gyneacologist" in problem_type:
-            problem_specific_agent = gyneacologist
-        elif "oncologist" in problem_type:
-            problem_specific_agent = oncologist
-        elif "neurologist" in problem_type:
-            problem_specific_agent = neurologist
-        elif "cardiologist" in problem_type:
-            problem_specific_agent = cardiologist
-        elif "endocrinologist" in problem_type:
-            problem_specific_agent = endocrinologist
-        elif "headdoctor" in problem_type:
-            problem_specific_agent = aggregator
-        
-        single_doctor = [problem_specific_agent, aggregator]
-        single_doctor_graph = {
-            "aggregator": [],
-            "gyneacologist": [aggregator],
-            "oncologist": [aggregator],
-            "neurologist": [aggregator],
-            "cardiologist": [aggregator],
-            "endocrinologist": [aggregator],
-        }
+        graph = ring_hospital_graph
 
         # instantiate the society
         # ProblemSolver = Society(doctors, heirarchical_hospital_graph)
         # ProblemSolver = Society(doctors, clique_hospital_graph)
-        ProblemSolver = Society(single_doctor, single_doctor_graph)
-        ProblemSolver.run_simulation(1, question, background = "")
+        ProblemSolver = Society(doctors, graph)
+        socities.append(ProblemSolver)
+        # ProblemSolver = Society(single_doctor, single_doctor_graph)
+        # ProblemSolver.run_simulation(1, question, background = "")
 
-        # based on the memory of head doctor, give the final answer to the user
-        # breakpoint()
-        # aggregator_response = aggregator.last_utterance + question
+    list_of_socities = ListOfSocities(socities, doctors, graph)
+    list_of_socities.run_simulation_parallel(1, question_list, background = "")
+
+    for i in range(len(question_list)):
         
-        # messages = [
-        #     {"role": "system", "content": answer_extraction_prompt},
-        #     {"role": "user", "content": aggregator_response + "n Answer: Let's think step by step."}
-        # ]
+        question = question_list[i]
+        gold_answer = gold_answer_list[i]
+        problem_type = problem_types[i]
+        society = socities[i]
 
-        # response = LLM(messages, llm_name)
-        response = aggregator.last_utterance
-        # print(response)
-        try:
-            response = response.split("[Answer:")[1].strip()
-        except:
-            response = response.strip()
-        # print(response)
-        # print(response, gold_answer)
-        if(gold_answer in response):
-            acc+=1
-        # print(acc)
-
+        response = society.agents["aggregator"].last_utterance
         # save the question, answer and memory of each agent in a jsonl file
         jsonl_content = {
             "question": question, 
             "gold_answer": gold_answer, 
             "society_answer":response, 
             "problem_type": problem_type,
-            "gyneacologist": gyneacologist.memory, 
-            "oncologist": oncologist.memory,
-            "neurologist": neurologist.memory,
-            "cardiologist": cardiologist.memory,
-            "endocrinologist": endocrinologist.memory,
-            "aggregator": aggregator.memory
+            "gyneacologist": society.agents["gyneacologist"].memory,
+            "oncologist": society.agents["oncologist"].memory,
+            "neurologist": society.agents["neurologist"].memory,
+            "cardiologist": society.agents["cardiologist"].memory,
+            "endocrinologist": society.agents["endocrinologist"].memory,
+            "aggregator": society.agents["aggregator"].memory
         }
         with open(log_file_name, "a") as f:
             f.write(json.dumps(jsonl_content) + "\n")
