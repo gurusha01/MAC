@@ -1,13 +1,14 @@
 
 import os 
-os.environ["CUDA_VISIBLE_DEVICES"] = "2,3,4,5"
+import torch
 from vllm import LLM, SamplingParams
 
 class vLLM_call:
     def __init__(self, model):
-        # breakpoint()
         self.model = model
-        self.llm = LLM(model=self.model)
+        self.llm = LLM(model=self.model, 
+                    #    tensor_parallel_size = 4
+                       )
     
     def call(self, prompts):
         # breakpoint()

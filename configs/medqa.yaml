@@ -2,4 +2,4 @@
 
 dataset_path: "datasets/MedQA_test_200.json"
 llm_name: "gemma_base"
-log_file_name: "try/medqa_200_ring_4_shot.jsonl"
+log_file_name: "try/medqa_200_generic_agent_opt125_4_shot.jsonl"

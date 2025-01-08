@@ -10,7 +10,8 @@ from llm import LLM
 from vLLM import vLLM_call 
 
 # instantiate the vLLM class
-vLLM = vLLM_call("FreedomIntelligence/HuatuoGPT-o1-7B")
+# vLLM = vLLM_call("FreedomIntelligence/HuatuoGPT-o1-7B")
+vLLM = vLLM_call("facebook/opt-125m")
 
 
 def extract_opention(answer):

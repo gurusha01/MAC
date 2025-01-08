@@ -1,7 +1,8 @@
 # from mathematicians import *
 from hospital import *
-from llm import *
-from society import *
+# from llm import *
+# from society import *
+from MedQA_single_agent import *
 import os
 import json
 import yaml

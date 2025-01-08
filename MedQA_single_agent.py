@@ -1,23 +1,16 @@
-# here we define a society of mathematicians that work together to solve problems from math dataset. 
-# First there is a decomposer that decomposes the problem into smaller subproblems and distributes them to the mathematicians. 
-# Then there are mathemaricians that specialize in different feilds like algebra, calculus, geometry, etc. 
-# they work with other math researchers that are further specialized in different areas like number area calculation, counting principal,etc.
-# after conversation, they report their answers to an aggregator that aggregates the answers and returns the final answer.
-# Currently we start with MATH dataset, then we include HardMAth, Scibench etc as well. 
-
-'''
-Instantiate agents
-make few graphs
-load datasets
-evaluate those graphs on dataset
-'''
-from society import Agent, Society, ListOfSocities
+from society import Agent
 import json
 from tqdm import tqdm
+from vLLM import vLLM_call
 
 
-# provide 4 shots of examples of problem solving to each agent related to their topic.
-generic_agent_system_prompt= '''
+
+
+agent_definitions = {
+"generic_agent" :{
+    "name": "generic",
+    "id": 0,
+    "system_prompt" : '''
     You are a medical expert answering a multiple choice question about medical knowledge. You are given a few examples of how to solve a problem.
      Solve the question in a step-by-step fashion, starting by summarizing the available information. Output a single option from the four options as the final answer.
 
@@ -55,8 +48,11 @@ D) S4
 Answer: S3 is often associated with heart failure and indicates increased ventricular filling pressures. S4 is linked to stiff ventricles, and S1 and S2 are normal heart sounds. The correct answer is [Answer: C].
 
 
-'''
-gyneacologist_agent = {
+''',
+    "model_name": "gemma_base",
+}, 
+
+"gyneacologist_agent" : {
     "name": "gyneacologist",
     "id": 0,
     "system_prompt": '''You are a highly skilled medical assistant specializing in gynecology. Your task is to answer gynecological queries accurately, concisely, and with evidence-based reasoning. Your expertise includes reproductive health, menstrual disorders, pregnancy, infertility, and gynecological surgeries.
@@ -98,9 +94,9 @@ Answer: The first trimester is the most critical for fetal development as organo
 When solving problems, provide a detailed yet concise explanation followed by the correct answer in brackets. Always maintain a logical and structured approach to reasoning, and explicitly state when a question is out of your specialization.
     ''',
     "model_name": "gemma_base"
-}
+},
 
-oncologist_agent = {
+"oncologist_agent" : {
     "name": "oncologist",
     "id": 1,
     "system_prompt": '''You are a highly skilled medical assistant specializing in oncology. Your task is to answer oncology-related queries accurately, concisely, and with evidence-based reasoning. Your expertise includes cancer diagnosis, treatment (chemotherapy, radiotherapy, immunotherapy), cancer genetics, and palliative care.
@@ -142,9 +138,9 @@ Answer: Genomic instability is a hallmark of cancer, enabling mutations that dri
 When solving problems, provide a detailed yet concise explanation followed by the correct answer in brackets. Always maintain a logical and structured approach to reasoning, and explicitly state when a question is out of your specialization.
     ''',
     "model_name": "gemma_base"
-}
+}, 
 
-neurologist_agent = {
+"neurologist_agent" : {
     "name": "neurologist",
     "id": 2,
     "system_prompt": '''You are a highly skilled medical assistant specializing in neurology. Your task is to answer neurology-related queries accurately, concisely, and with evidence-based reasoning. Your expertise includes neurological disorders, stroke, epilepsy, neurodegenerative diseases, and neuropathies.
@@ -186,9 +182,9 @@ Answer: Vitamin B12 deficiency causes subacute combined degeneration of the spin
 When solving problems, provide a detailed yet concise explanation followed by the correct answer in brackets. Always maintain a logical and structured approach to reasoning, and explicitly state when a question is out of your specialization.
     ''',
     "model_name": "gemma_base"
-}
+}, 
 
-cardiologist_agent = {
+"cardiologist_agent" : {
     "name": "cardiologist",
     "id": 3,
     "system_prompt": '''You are a highly skilled medical assistant specializing in cardiology. Your task is to answer cardiology-related queries accurately, concisely, and with evidence-based reasoning. Your expertise includes heart diseases, arrhythmias, coronary artery disease, heart failure, and cardiovascular pharmacology.
@@ -230,9 +226,9 @@ Answer: The normal ejection fraction range for a healthy heart is 50-70%. Values
 When solving problems, provide a detailed yet concise explanation followed by the correct answer in brackets. Always maintain a logical and structured approach to reasoning, and explicitly state when a question is out of your specialization.
     ''',
     "model_name": "gemma_base"
-}
+},
 
-endocrinologist_agent = {
+"endocrinologist_agent" : {
     "name": "endocrinologist",
     "id": 4,
     "system_prompt": '''You are a highly skilled medical assistant specializing in endocrinology. Your task is to answer endocrinology-related queries accurately, concisely, and with evidence-based reasoning. Your expertise includes diabetes, thyroid disorders, adrenal dysfunction, and hormonal imbalances.
@@ -275,186 +271,46 @@ When solving problems, provide a detailed yet concise explanation followed by th
     ''',
     "model_name": "gemma_base"
 }
-
-aggregator_agent = {
-    "name": "aggregator",
-    "id": 5,
-    "system_prompt": '''You are an aggregator agent tasked with synthesizing and evaluating responses from specialized medical agents. Your goal is to carefully analyze their responses along with the original question and provide the most accurate, evidence-based, and well-justified answer.
-
-When responding:
-1. Review the responses from the specialized agents and assess their relevance, accuracy, and reasoning. 
-2. Consider the complexity of the question and the domains involved. If multiple specializations are relevant, integrate their insights for a holistic response.
-3. Resolve discrepancies or conflicts in the responses by referring to established medical guidelines or evidence-based practices.
-4. Present the final answer clearly and concisely, with logical reasoning and justification for your decision.
-
-Format the final answer:
-- Provide a short explanation for your reasoning.
-- Conclude with the answer in brackets like [Answer: <answer>] where <answer> is a choice (A/B/C/D) or a specific term/diagnosis based on the question.
-
-If the question does not fall within any medical domain or is not sufficiently clear, state that it is outside the scope of the aggregated expertise and request clarification or more information.
-    ''',
-    "model_name": "gemma_base"
 }
 
-def test_doctors(llm_name, question_list, gold_answer_list, problem_types, log_file_name):
-    expt = "generic"
-
+def test_doctor(llm_name, question_list, gold_answer_list, problem_types, log_file_name):
+    expt = "special"
+    vLLM = vLLM_call("google/gemma-2-2b-it")
     acc = 0
     question_list = question_list[:100]
     gold_answer_list = gold_answer_list[:100]
     problem_types = problem_types[:100]
-
-    if expt == "special":
-
-        gyneacologist = Agent(**gyneacologist_agent)
-        oncologist = Agent(**oncologist_agent)
-        neurologist = Agent(**neurologist_agent)
-        cardiologist = Agent(**cardiologist_agent)
-        endocrinologist = Agent(**endocrinologist_agent)
-        aggregator = Agent(**aggregator_agent)
-
-
-        doctors = [gyneacologist, oncologist, neurologist, cardiologist, endocrinologist, aggregator]
-    else: 
-        doctor1 = Agent("doctor1", 0, generic_agent_system_prompt)
-        doctor2 = Agent("doctor2", 1, generic_agent_system_prompt)
-        doctor3 = Agent("doctor3", 2, generic_agent_system_prompt)
-        doctor4 = Agent("doctor4", 3, generic_agent_system_prompt)
-        doctor5 = Agent("doctor5", 4, generic_agent_system_prompt)
-        aggregator = Agent(**aggregator_agent)
-
-        doctors = [doctor1, doctor2, doctor3, doctor4, doctor5, aggregator]
-
-    heirarchical_hospital_graph_spl_ag = {
-        "aggregator": [],
-        "gyneacologist": [aggregator],
-        "oncologist": [aggregator],
-        "neurologist": [aggregator],
-        "cardiologist": [aggregator],
-        "endocrinologist": [aggregator],
-    }
-
-    heirarchical_hospital_graph_generic = {
-        "aggregator": [],
-        "doctor1": [aggregator],
-        "doctor2": [aggregator],
-        "doctor3": [aggregator],
-        "doctor4": [aggregator],
-        "doctor5": [aggregator],
-
-    }
-
-
-    clique_hospital_graph_spl_ag = {
-        "aggregator": [],
-        "gyneacologist": [oncologist, neurologist, cardiologist, endocrinologist, aggregator],
-        "oncologist": [gyneacologist, neurologist, cardiologist, endocrinologist, aggregator],
-        "neurologist": [gyneacologist, oncologist, cardiologist, endocrinologist, aggregator],
-        "cardiologist": [gyneacologist, oncologist, neurologist, endocrinologist, aggregator],
-        "endocrinologist": [gyneacologist, oncologist, neurologist, cardiologist, aggregator],
-    }
-
-    clique_hospital_graph_generic = {
-        "aggregator": [],
-        "doctor1": [doctor2, doctor3, doctor4, doctor5, aggregator],
-        "doctor2": [doctor1, doctor3, doctor4, doctor5, aggregator],
-        "doctor3": [doctor1, doctor2, doctor4, doctor5, aggregator],
-        "doctor4": [doctor1, doctor2, doctor3, doctor5, aggregator],
-        "doctor5": [doctor1, doctor2, doctor3, doctor4, aggregator],
-    }
-
-    ring_hospital_graph_spl_ag = {
-        "aggregator": [],
-        "gyneacologist": [oncologist, endocrinologist],
-        "oncologist": [neurologist, cardiologist],
-        "neurologist": [cardiologist, endocrinologist],
-        "cardiologist": [endocrinologist, gyneacologist],
-        "endocrinologist": [gyneacologist, oncologist],
-    }
-
-    ring_hospital_graph_generic = {
-        "aggregator": [],
-        "doctor1": [doctor2, doctor5],
-        "doctor2": [doctor3, doctor1],
-        "doctor3": [doctor4, doctor2],
-        "doctor4": [doctor5, doctor3],
-        "doctor5": [doctor1, doctor4],
-    }
-    # breakpoint() 
-    # if "gyneacologist" in problem_type:
-    #     problem_specific_agent = gyneacologist
-    # elif "oncologist" in problem_type:
-    #     problem_specific_agent = oncologist
-    # elif "neurologist" in problem_type:
-    #     problem_specific_agent = neurologist
-    # elif "cardiologist" in problem_type:
-    #     problem_specific_agent = cardiologist
-    # elif "endocrinologist" in problem_type:
-    #     problem_specific_agent = endocrinologist
-    # elif "headdoctor" in problem_type:
-    #     problem_specific_agent = aggregator
-    
-    # single_doctor = [problem_specific_agent, aggregator]
-    # single_doctor_graph = {
-    #     "aggregator": [],
-    #     "gyneacologist": [aggregator],
-    #     "oncologist": [aggregator],
-    #     "neurologist": [aggregator],
-    #     "cardiologist": [aggregator],
-    #     "endocrinologist": [aggregator],
-    # }
-    socities = []
-    
-    for i in tqdm(range(len(question_list))):
-        
-        question = question_list[i]
-        gold_answer = gold_answer_list[i]
-        problem_type = problem_types[i]
-        graph = ring_hospital_graph_generic
-
-        # instantiate the society
-        # ProblemSolver = Society(doctors, heirarchical_hospital_graph)
-        # ProblemSolver = Society(doctors, clique_hospital_graph)
-        ProblemSolver = Society(doctors, graph)
-        socities.append(ProblemSolver)
-        # ProblemSolver = Society(single_doctor, single_doctor_graph)
-        # ProblemSolver.run_simulation(1, question, background = "")
-
-    list_of_socities = ListOfSocities(socities, doctors, graph)
-    list_of_socities.run_simulation_parallel(1, question_list, background = "")
-
+    agent_list = []
+    breakpoint()
     for i in range(len(question_list)):
         
-        question = question_list[i]
-        gold_answer = gold_answer_list[i]
-        problem_type = problem_types[i]
-        society = socities[i]
+        if expt == "special":
+            agent_specialization = problem_types[i][0]+"_agent"
+        else:
+            agent_specialization = "generic_agent"
+        
+        agent = Agent(**agent_definitions[agent_specialization])
+        agent_list.append(agent)
 
-        response = society.agents["aggregator"].last_utterance
-        # save the question, answer and memory of each agent in a jsonl file
-        jsonl_content = {
-            "question": question, 
-            "gold_answer": gold_answer, 
-            "final_answer":response, 
-            "problem_type": problem_type,
-            # "gyneacologist": society.agents["gyneacologist"].memory,
-            # "oncologist": society.agents["oncologist"].memory,
-            # "neurologist": society.agents["neurologist"].memory,
-            # "cardiologist": society.agents["cardiologist"].memory,
-            # "endocrinologist": society.agents["endocrinologist"].memory,
-            # "aggregator": society.agents["aggregator"].memory
-        }
-        for doctor in doctors:
-            jsonl_content[doctor.name] = society.agents[doctor.name].memory
+    
+    llm_inputs = []
+    for i in range(len(question_list)):
+        agent_input = agent_list[i]. process_input_parallel_string(question_list[i])
+        llm_inputs.append(agent_input)
 
-        with open(log_file_name, "a") as f:
-            f.write(json.dumps(jsonl_content) + "\n")
+    llm_outputs = vLLM.call(llm_inputs)
 
-    print("Accuracy: ", acc/len(question_list))
+    with open(log_file_name, "w") as f:
+        for i in range(len(llm_outputs)):
+            jsonl_content = {
+            "question": question_list[i], 
+            "gold_answer": gold_answer_list[i], 
+            "agent_answer":llm_outputs[i], 
+            "problem_type": problem_types[i]
+            }
+            f.write(json.dumps(jsonl_content))
+            
 
+    
 
-
-
-
-
-
+    
