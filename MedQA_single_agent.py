@@ -2,7 +2,10 @@ from society import Agent
 import json
 from tqdm import tqdm
 from vLLM import vLLM_call
-
+from vLLM import SamplingParams
+import time
+# export CUDA_VISIBLE_DEVICES="2"
+# conda activate tryvllm
 
 
 
@@ -12,7 +15,8 @@ agent_definitions = {
     "id": 0,
     "system_prompt" : '''
     You are a medical expert answering a multiple choice question about medical knowledge. You are given a few examples of how to solve a problem.
-     Solve the question in a step-by-step fashion, starting by summarizing the available information. Output a single option from the four options as the final answer.
+   Use these examples to guide your responses. Provide detailed reasoning for each question and end with the correct answer in brackets, like [Answer: <answer>].
+
 
     
     Question: Which of the following is a diagnostic feature of endometriosis?
@@ -47,6 +51,7 @@ D) S4
 
 Answer: S3 is often associated with heart failure and indicates increased ventricular filling pressures. S4 is linked to stiff ventricles, and S1 and S2 are normal heart sounds. The correct answer is [Answer: C].
 
+Now, answer the following question given by the user.
 
 ''',
     "model_name": "gemma_base",
@@ -92,7 +97,8 @@ D) Postpartum
 Answer: The first trimester is the most critical for fetal development as organogenesis occurs during this period, making the fetus highly susceptible to teratogenic effects. The correct answer is [Answer: A].
 
 When solving problems, provide a detailed yet concise explanation followed by the correct answer in brackets. Always maintain a logical and structured approach to reasoning, and explicitly state when a question is out of your specialization.
-    ''',
+   Now, answer the following question given by the user.
+     ''',
     "model_name": "gemma_base"
 },
 
@@ -136,7 +142,8 @@ D) Increased cellular adhesion
 Answer: Genomic instability is a hallmark of cancer, enabling mutations that drive tumorigenesis. Cancer cells evade apoptosis, rely on glycolysis for energy (Warburg effect), and often exhibit reduced adhesion for metastasis. The correct answer is [Answer: B].
 
 When solving problems, provide a detailed yet concise explanation followed by the correct answer in brackets. Always maintain a logical and structured approach to reasoning, and explicitly state when a question is out of your specialization.
-    ''',
+   Now, answer the following question given by the user.
+     ''',
     "model_name": "gemma_base"
 }, 
 
@@ -180,6 +187,7 @@ D) Vitamin D
 Answer: Vitamin B12 deficiency causes subacute combined degeneration of the spinal cord, characterized by demyelination of the dorsal columns and corticospinal tracts. The correct answer is [Answer: C].
 
 When solving problems, provide a detailed yet concise explanation followed by the correct answer in brackets. Always maintain a logical and structured approach to reasoning, and explicitly state when a question is out of your specialization.
+    Now, answer the following question given by the user.
     ''',
     "model_name": "gemma_base"
 }, 
@@ -224,6 +232,7 @@ D) 70-90%
 Answer: The normal ejection fraction range for a healthy heart is 50-70%. Values below this range indicate reduced cardiac function. The correct answer is [Answer: C].
 
 When solving problems, provide a detailed yet concise explanation followed by the correct answer in brackets. Always maintain a logical and structured approach to reasoning, and explicitly state when a question is out of your specialization.
+    Now, answer the following question given by the user.
     ''',
     "model_name": "gemma_base"
 },
@@ -268,6 +277,7 @@ D) TSH
 Answer: PTH regulates calcium levels by increasing bone resorption, renal calcium reabsorption, and intestinal calcium absorption. The correct answer is [Answer: A].
 
 When solving problems, provide a detailed yet concise explanation followed by the correct answer in brackets. Always maintain a logical and structured approach to reasoning, and explicitly state when a question is out of your specialization.
+    Now, answer the following question given by the user.
     ''',
     "model_name": "gemma_base"
 }
@@ -275,7 +285,9 @@ When solving problems, provide a detailed yet concise explanation followed by th
 
 def test_doctor(llm_name, question_list, gold_answer_list, problem_types, log_file_name):
     expt = "special"
-    vLLM = vLLM_call("google/gemma-2-2b-it")
+    vLLM = vLLM_call("FreedomIntelligence/HuatuoGPT-o1-7B")
+    time.sleep(2*3600)  
+
     acc = 0
     question_list = question_list[:100]
     gold_answer_list = gold_answer_list[:100]
@@ -297,8 +309,8 @@ def test_doctor(llm_name, question_list, gold_answer_list, problem_types, log_fi
     for i in range(len(question_list)):
         agent_input = agent_list[i]. process_input_parallel_string(question_list[i])
         llm_inputs.append(agent_input)
-
-    llm_outputs = vLLM.call(llm_inputs)
+    sampling_params = SamplingParams(temperature=0.8, top_p=0.95, max_tokens = 300)
+    llm_outputs = vLLM.call(llm_inputs, sampling_params)
 
     with open(log_file_name, "w") as f:
         for i in range(len(llm_outputs)):
@@ -308,7 +320,7 @@ def test_doctor(llm_name, question_list, gold_answer_list, problem_types, log_fi
             "agent_answer":llm_outputs[i], 
             "problem_type": problem_types[i]
             }
-            f.write(json.dumps(jsonl_content))
+            f.write(json.dumps(jsonl_content)+ "\n")
             
 
     

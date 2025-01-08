@@ -10,9 +10,9 @@ class vLLM_call:
                     #    tensor_parallel_size = 4
                        )
     
-    def call(self, prompts):
-        # breakpoint()
-        sampling_params = SamplingParams(temperature=0.8, top_p=0.95)
+    def call(self, prompts, sampling_params):
+        breakpoint()
+        # sampling_params = SamplingParams(temperature=0.8, top_p=0.95, max_tokens = 1000)
         response_list = []
         outputs =  self.llm.generate(prompts, sampling_params)
         for output in outputs:

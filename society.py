@@ -7,11 +7,12 @@ then we need a class for society where we need function to communicate.
 '''
 
 from llm import LLM
-from vLLM import vLLM_call 
+from vLLM import vLLM_call
+from vllm import SamplingParams
 
 # instantiate the vLLM class
 # vLLM = vLLM_call("FreedomIntelligence/HuatuoGPT-o1-7B")
-vLLM = vLLM_call("facebook/opt-125m")
+# vLLM = vLLM_call("facebook/opt-125m")
 
 
 def extract_opention(answer):
@@ -149,11 +150,16 @@ class ListOfSocities:
         set_of_agents = self.agents
         for i in range(num_rounds):
             for agent in set_of_agents:
+                if(agent.name != "aggregator"):
+                    sampling_params = SamplingParams(temperature=0.8, top_p=0.95, max_tokens = 300)
+                else:
+                    sampling_params = SamplingParams(temperature=0.8, top_p=0.95, max_tokens = 300)
+        
                 llm_input_list = []
                 for society, question in zip(self.list_of_socities, questions):
                     llm_input_list.append(society.agents[agent.id].process_input_parallel_string(question, background))
                 
-                responses = vLLM.call(llm_input_list)
+                responses = vLLM.call(llm_input_list, sampling_params)
                 # print(responses[0])
                 for society, response in zip(self.list_of_socities, responses):
                     # breakpoint()

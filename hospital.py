@@ -297,7 +297,7 @@ If the question does not fall within any medical domain or is not sufficiently c
 }
 
 def test_doctors(llm_name, question_list, gold_answer_list, problem_types, log_file_name):
-    expt = "generic"
+    expt = "special"
 
     acc = 0
     question_list = question_list[:100]
@@ -315,6 +315,40 @@ def test_doctors(llm_name, question_list, gold_answer_list, problem_types, log_f
 
 
         doctors = [gyneacologist, oncologist, neurologist, cardiologist, endocrinologist, aggregator]
+    
+    
+        heirarchical_hospital_graph_spl_ag = {
+            "aggregator": [],
+            "gyneacologist": [aggregator],
+            "oncologist": [aggregator],
+            "neurologist": [aggregator],
+            "cardiologist": [aggregator],
+            "endocrinologist": [aggregator],
+        }
+
+
+
+
+        clique_hospital_graph_spl_ag = {
+            "aggregator": [],
+            "gyneacologist": [oncologist, neurologist, cardiologist, endocrinologist, aggregator],
+            "oncologist": [gyneacologist, neurologist, cardiologist, endocrinologist, aggregator],
+            "neurologist": [gyneacologist, oncologist, cardiologist, endocrinologist, aggregator],
+            "cardiologist": [gyneacologist, oncologist, neurologist, endocrinologist, aggregator],
+            "endocrinologist": [gyneacologist, oncologist, neurologist, cardiologist, aggregator],
+        }
+
+
+
+        ring_hospital_graph_spl_ag = {
+            "aggregator": [],
+            "gyneacologist": [oncologist, endocrinologist],
+            "oncologist": [neurologist, cardiologist],
+            "neurologist": [cardiologist, endocrinologist],
+            "cardiologist": [endocrinologist, gyneacologist],
+            "endocrinologist": [gyneacologist, oncologist],
+        }
+
     else: 
         doctor1 = Agent("doctor1", 0, generic_agent_system_prompt)
         doctor2 = Agent("doctor2", 1, generic_agent_system_prompt)
@@ -325,61 +359,40 @@ def test_doctors(llm_name, question_list, gold_answer_list, problem_types, log_f
 
         doctors = [doctor1, doctor2, doctor3, doctor4, doctor5, aggregator]
 
-    heirarchical_hospital_graph_spl_ag = {
-        "aggregator": [],
-        "gyneacologist": [aggregator],
-        "oncologist": [aggregator],
-        "neurologist": [aggregator],
-        "cardiologist": [aggregator],
-        "endocrinologist": [aggregator],
-    }
+       
 
-    heirarchical_hospital_graph_generic = {
-        "aggregator": [],
-        "doctor1": [aggregator],
-        "doctor2": [aggregator],
-        "doctor3": [aggregator],
-        "doctor4": [aggregator],
-        "doctor5": [aggregator],
+        heirarchical_hospital_graph_generic = {
+            "aggregator": [],
+            "doctor1": [aggregator],
+            "doctor2": [aggregator],
+            "doctor3": [aggregator],
+            "doctor4": [aggregator],
+            "doctor5": [aggregator],
 
-    }
+        }
 
 
-    clique_hospital_graph_spl_ag = {
-        "aggregator": [],
-        "gyneacologist": [oncologist, neurologist, cardiologist, endocrinologist, aggregator],
-        "oncologist": [gyneacologist, neurologist, cardiologist, endocrinologist, aggregator],
-        "neurologist": [gyneacologist, oncologist, cardiologist, endocrinologist, aggregator],
-        "cardiologist": [gyneacologist, oncologist, neurologist, endocrinologist, aggregator],
-        "endocrinologist": [gyneacologist, oncologist, neurologist, cardiologist, aggregator],
-    }
+        
 
-    clique_hospital_graph_generic = {
-        "aggregator": [],
-        "doctor1": [doctor2, doctor3, doctor4, doctor5, aggregator],
-        "doctor2": [doctor1, doctor3, doctor4, doctor5, aggregator],
-        "doctor3": [doctor1, doctor2, doctor4, doctor5, aggregator],
-        "doctor4": [doctor1, doctor2, doctor3, doctor5, aggregator],
-        "doctor5": [doctor1, doctor2, doctor3, doctor4, aggregator],
-    }
+        clique_hospital_graph_generic = {
+            "aggregator": [],
+            "doctor1": [doctor2, doctor3, doctor4, doctor5, aggregator],
+            "doctor2": [doctor1, doctor3, doctor4, doctor5, aggregator],
+            "doctor3": [doctor1, doctor2, doctor4, doctor5, aggregator],
+            "doctor4": [doctor1, doctor2, doctor3, doctor5, aggregator],
+            "doctor5": [doctor1, doctor2, doctor3, doctor4, aggregator],
+        }
 
-    ring_hospital_graph_spl_ag = {
-        "aggregator": [],
-        "gyneacologist": [oncologist, endocrinologist],
-        "oncologist": [neurologist, cardiologist],
-        "neurologist": [cardiologist, endocrinologist],
-        "cardiologist": [endocrinologist, gyneacologist],
-        "endocrinologist": [gyneacologist, oncologist],
-    }
+        
 
-    ring_hospital_graph_generic = {
-        "aggregator": [],
-        "doctor1": [doctor2, doctor5],
-        "doctor2": [doctor3, doctor1],
-        "doctor3": [doctor4, doctor2],
-        "doctor4": [doctor5, doctor3],
-        "doctor5": [doctor1, doctor4],
-    }
+        ring_hospital_graph_generic = {
+            "aggregator": [],
+            "doctor1": [doctor2, doctor5],
+            "doctor2": [doctor3, doctor1],
+            "doctor3": [doctor4, doctor2],
+            "doctor4": [doctor5, doctor3],
+            "doctor5": [doctor1, doctor4],
+        }
     # breakpoint() 
     # if "gyneacologist" in problem_type:
     #     problem_specific_agent = gyneacologist
@@ -410,11 +423,12 @@ def test_doctors(llm_name, question_list, gold_answer_list, problem_types, log_f
         question = question_list[i]
         gold_answer = gold_answer_list[i]
         problem_type = problem_types[i]
-        graph = ring_hospital_graph_generic
+        graph = ring_hospital_graph_spl_ag
 
         # instantiate the society
         # ProblemSolver = Society(doctors, heirarchical_hospital_graph)
         # ProblemSolver = Society(doctors, clique_hospital_graph)
+        # breakpoint()
         ProblemSolver = Society(doctors, graph)
         socities.append(ProblemSolver)
         # ProblemSolver = Society(single_doctor, single_doctor_graph)
@@ -430,7 +444,7 @@ def test_doctors(llm_name, question_list, gold_answer_list, problem_types, log_f
         problem_type = problem_types[i]
         society = socities[i]
 
-        response = society.agents["aggregator"].last_utterance
+        response = society.agents[aggregator.id].last_utterance
         # save the question, answer and memory of each agent in a jsonl file
         jsonl_content = {
             "question": question, 
@@ -445,7 +459,7 @@ def test_doctors(llm_name, question_list, gold_answer_list, problem_types, log_f
             # "aggregator": society.agents["aggregator"].memory
         }
         for doctor in doctors:
-            jsonl_content[doctor.name] = society.agents[doctor.name].memory
+            jsonl_content[doctor.name] = society.agents[doctor.id].memory
 
         with open(log_file_name, "a") as f:
             f.write(json.dumps(jsonl_content) + "\n")

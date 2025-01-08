@@ -33,7 +33,7 @@ if __name__ == "__main__":
     gold_answer_list = dataset["gold_answer_list"]
     problem_type_list = dataset["problem_type_list"]
     # test_mathematicians(llm_name, question_list, gold_answer_list, problem_type_list, log_file_name)
-    test_doctors(llm_name, question_list, gold_answer_list, problem_type_list, log_file_name)
+    test_doctor(llm_name, question_list, gold_answer_list, problem_type_list, log_file_name)
 
 
 
