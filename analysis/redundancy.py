@@ -12,7 +12,17 @@ from matplotlib import pyplot as plt
 import sys
 import torch
 import time
+import os
+from tqdm import tqdm
 
+import warnings
+
+warnings.filterwarnings("ignore")
+
+def find_openion(text):
+    match = re.search(r"Your Opinion:(.*?)(?=\n\n|$)", text, re.DOTALL)
+    your_opinion = match.group(1).strip() if match else "No 'Your Opinion' section found."
+    return your_opinion
 
 
 
@@ -97,70 +107,107 @@ def ConvGraph():
 if __name__ == "__main__":
     # take file path from sys args
     # breakpoint()
-    file_path = sys.argv[1]
-    cossim_full = []
-    jaccard_full = []
-    semsim_full = []
-    mutual_info_full = []
-    overlap_full = []
-    
-    start = time.time()
+    dir_path = sys.argv[1]
 
-    with open(file_path) as f:
-        for line in f:
-            data = json.loads(line)
-            conversation = []
-            conversation.append(data['gyneacologist'])
-            conversation.append(data['oncologist'])
-            conversation.append(data['neurologist'])
-            conversation.append(data['cardiologist'])
-            conversation.append(data['endocrinologist'])
+    # take all the files starting with improv in the directory and make a list of them
+    # breakpoint()
+    files = []
+    for file in os.listdir(dir_path):
+        if file.startswith("improv"):
+            files.append(file)
+    # breakpoint()
+    for file in tqdm(files):
+        # remove the extension to get the filename
+        # start = time.time()
+        cossim_full = []
+        jaccard_full = []
+        semsim_full = []
+        mutual_info_full = []
+        overlap_full = []
+        file_name_no_ext = file.split(".")[0]
+        full_file_path = os.path.join(dir_path, file)
+        
+        with open(full_file_path) as f:
+            i = 0
+            for line in f:
+                data = json.loads(line)
+                conversation = []
+                # conversation.append(data['gyneacologist'])
+                # conversation.append(data['oncologist'])
+                # conversation.append(data['neurologist'])
+                # conversation.append(data['cardiologist'])
+                # conversation.append(data['endocrinologist'])
+                d1 = data['doctor1']
+                d2 = data['doctor2']
+                d3 = data['doctor3']
+                d4 = data['doctor4']
+                d5 = data['doctor5']
+                
+                dr1_openion = find_openion(d1)
+                dr2_openion = find_openion(d2)
+                dr3_openion = find_openion(d3)
+                dr4_openion = find_openion(d4)
+                dr5_openion = find_openion(d5)
+                # breakpoint()
 
-            #analysis of the conversation
-            cossim, jaccard = lexical_similarity(conversation)
-            semsim = semantic_similarity(conversation)
-            mutual_info = mutual_information(conversation)
-            av_overlap = overlap(conversation)
+                conversation.append(dr1_openion)
+                conversation.append(dr2_openion)
+                conversation.append(dr3_openion)
+                conversation.append(dr4_openion)
+                conversation.append(dr5_openion)
 
-            cossim_full.append(cossim)
-            jaccard_full.append(jaccard)
-            semsim_full.append(semsim)
-            mutual_info_full.append(mutual_info)
-            overlap_full.append(av_overlap)
-    end = time.time()
-    print(f"Time taken for analysis: {end-start}")
+                #analysis of the conversation
+                cossim, jaccard = lexical_similarity(conversation)
+                # print(f"Lexical Similarity for {i} done")
+                semsim = semantic_similarity(conversation)
+                # print(f"Semantic Similarity for {i} done")
+                mutual_info = mutual_information(conversation)
+                # print(f"Mutual Information for {i} done")
+                av_overlap = overlap(conversation)
+                # print(f"Overlap for {i} done")
 
-    # make histograms for each analysis
+                cossim_full.append(cossim)
+                jaccard_full.append(jaccard)
+                semsim_full.append(semsim)
+                mutual_info_full.append(mutual_info)
+                overlap_full.append(av_overlap)
+                i += 1
+        
+        
+        # end = time.time()
+        # print(f"Time taken for analysis: {end-start}")
 
-    fig, axes = plt.subplots(2, 3, figsize=(15, 3), sharey=True)
+        # make histograms for each analysis
 
-    # Plot histograms
-    axes[0,0].hist(cossim_full, bins=15, edgecolor='black')
-    axes[0,0].set_title("Cosine Similarity TfIdf")
+        fig, axes = plt.subplots(3, 2, figsize=(15, 15), sharey=True)
 
-    axes[0,1].hist(jaccard_full, bins=15, edgecolor='black')
-    axes[0,1].set_title("Jaccard Similarity")
+        # Plot histograms
+        axes[0,0].hist(cossim_full, bins=100, edgecolor='black')
+        axes[0,0].set_title("Cosine Similarity TfIdf")
 
-    axes[0,2].hist(semsim_full, bins=15, edgecolor='black')
-    axes[0,2].set_title("Cosine Similarity Bert")
+        axes[0,1].hist(jaccard_full, bins=100, edgecolor='black')
+        axes[0,1].set_title("Jaccard Similarity")
 
-    axes[1,0].hist(mutual_info_full, bins=15, edgecolor='black')
-    axes[1,0].set_title("Mutual Information")
+        axes[2,0].hist(semsim_full, bins=100, edgecolor='black')
+        axes[2,0].set_title("Cosine Similarity Bert")
 
-    axes[1,1].hist(overlap_full, bins=15, edgecolor='black')
-    axes[1,1].set_title("Overlap")
+        axes[1,0].hist(mutual_info_full, bins=100, edgecolor='black')
+        axes[1,0].set_title("Mutual Information")
 
-    # Add overall labels
-    fig.suptitle(f"{file_path} Analysis")
-    plt.xlabel("Value")
-    plt.ylabel("Frequency")
+        axes[1,1].hist(overlap_full, bins=100, edgecolor='black')
+        axes[1,1].set_title("Overlap")
 
-    # Show the plot
-    plt.tight_layout()
-    plt.show()
+        # Add overall labels
+        fig.suptitle(f"{file_name_no_ext} Analysis")
+        plt.xlabel("Value")
+        plt.ylabel("Frequency")
 
-    # save the plot
-    plt.savefig(f"analysis/{file_path}_analysis.png")
+        # Show the plot
+        plt.tight_layout()
+        plt.show()
+
+        # save the plot
+        plt.savefig(f"{dir_path}/plots/{file_name_no_ext}_analysis.png")
 
 
 
